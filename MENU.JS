@@ -99,6 +99,7 @@
 //         menuContainer.innerHTML = "<p>Please log in to view the menu.</p>";
 //     }
 // });
+
 import { db } from "./firebase-config.js";
 import { collection, getDocs, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { auth } from "./firebase-config.js"; // Ensure you import Firebase Auth
@@ -145,8 +146,6 @@ function addProductToPage(item, productId) {
     menuContainer.appendChild(productCard);
 }
 
-// LOAD PRODUCTS WHEN PAGE LOADS
-document.addEventListener("DOMContentLoaded", fetchProducts);
 
 // FUNCTION TO CHECK IF AN ITEM IS ALREADY IN THE CART
 async function checkCartStatus() {
@@ -195,11 +194,13 @@ async function addToCart(button, product, productId) {
     }
 }
 
-// LISTEN FOR AUTH STATE CHANGES
-auth.onAuthStateChanged((user) => {
-    if (user) {
-        fetchProducts();
-    } else {
-        menuContainer.innerHTML = "<p>Please log in to view the menu.</p>";
-    }
+// LISTEN FOR AUTH STATE CHANGES AND LOADS PRODUCT WHEN PAGE LOADS
+document.addEventListener("DOMContentLoaded", () => {
+    auth.onAuthStateChanged((user) => {
+        if (user) {
+            fetchProducts(); // Fetch products only if the user is logged in
+        } else {
+            menuContainer.innerHTML = "<p>Please log in to view the menu.</p>";
+        }
+    });
 });
