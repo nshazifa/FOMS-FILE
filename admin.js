@@ -1,5 +1,5 @@
 import { db } from "./firebase-config.js";
-import { collection, getDocs, doc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { collection, getDocs, doc, setDoc, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const content = document.getElementById("content");
 
@@ -12,8 +12,6 @@ async function fetchMenu() {
     
     const menuDocRef = doc(db, "Menu", "menuItems");
     const subcollections = ["burger-items", "pizza-items", "momos-items", "desert-items", "drinks-items"];
-
-    // const subcollections = ["burger-items", "pizza-items", "momos-items" ,"desert-items"];
 
     for (const subcollection of subcollections) {
         const querySnapshot = await getDocs(collection(menuDocRef, subcollection));
@@ -37,7 +35,7 @@ function addItemToTable(id, item, category) {
         <td>₹${item.price}</td>
         <td>${category}</td>
         <td>
-            <button class="edit-btn" data-id="${id}" data-category="${category}">Edit</button>
+            <button class="edit-btn" data-id="${id}" data-category="${category}" data-name="${item.name}" data-price="${item.price}" data-image="${item.image}">Edit</button>
             <button class="delete-btn" data-id="${id}" data-category="${category}">Delete</button>
         </td>
     `;
@@ -60,13 +58,41 @@ async function addItem(e) {
     e.target.reset();
 }
 
-// DELETE ITEM
+// DELETE ITEM WITH CONFIRMATION
 document.addEventListener("click", async (e) => {
     if (e.target.classList.contains("delete-btn")) {
         const id = e.target.dataset.id;
         const category = e.target.dataset.category;
+
+        // Confirmation dialog
+        const confirmDelete = confirm("Are you sure you want to delete this item?");
+        if (!confirmDelete) return; // If cancelled, do nothing
         
         await deleteDoc(doc(db, `Menu/menuItems/${category}/${id}`));
+        fetchMenu(); // Refresh table
+    }
+});
+
+// EDIT ITEM FUNCTIONALITY
+document.addEventListener("click", async (e) => {
+    if (e.target.classList.contains("edit-btn")) {
+        const id = e.target.dataset.id;
+        const category = e.target.dataset.category;
+        const oldName = e.target.dataset.name;
+        const oldPrice = e.target.dataset.price;
+        const oldImage = e.target.dataset.image;
+
+        // Prompt for new values
+        const newName = prompt("Enter new name:", oldName);
+        const newPrice = prompt("Enter new price:", oldPrice);
+        const newImage = prompt("Enter new image URL:", oldImage);
+
+        if (!newName || !newPrice || !newImage) return; // If any value is missing, cancel
+
+        // Update Firestore
+        const itemRef = doc(db, `Menu/menuItems/${category}/${id}`);
+        await updateDoc(itemRef, { name: newName, price: Number(newPrice), image: newImage });
+
         fetchMenu(); // Refresh table
     }
 });
@@ -74,7 +100,8 @@ document.addEventListener("click", async (e) => {
 // FUNCTIONS FOR LOADING DIFFERENT PAGES
 function loadMenu() {
     content.innerHTML = `
-        <h2>Menu Items</h2>
+        <h2>Modify Menu</h2>
+        <p>View edit and delete Menu items </p>
         <table border="1">
             <thead>
                 <tr>
@@ -93,7 +120,7 @@ function loadMenu() {
 
 function loadModifyMenu() {
     content.innerHTML = `
-        <h2>Modify Menu</h2>
+        <h2>Add to Menu</h2>
         <form id="addItemForm">
             <input type="text" id="itemName" placeholder="Item Name" required>
             <input type="number" id="itemPrice" placeholder="Price" required>
